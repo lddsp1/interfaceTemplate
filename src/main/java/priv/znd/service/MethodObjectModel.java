@@ -3,6 +3,8 @@ package priv.znd.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.restassured.response.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,7 +13,8 @@ import java.util.HashMap;
 public abstract class MethodObjectModel {
     private String name;
     private HashMap<String, MethodModel> methods;
-    private HashMap<String, Object> saveParams = new HashMap<>();
+    private HashMap<String, String> save = new HashMap<>();
+    private static final Logger logger = LoggerFactory.getLogger(MethodObjectModel.class);
 
 
     public String getName() {
@@ -30,12 +33,12 @@ public abstract class MethodObjectModel {
         this.methods = methods;
     }
 
-    public HashMap<String, Object> getSaveParams() {
-        return saveParams;
+    public HashMap<String, String> getSave() {
+        return save;
     }
 
-    public void setSaveParams(HashMap<String, Object> saveParams) {
-        this.saveParams = saveParams;
+    public void setSave(HashMap<String, String> saveParams) {
+        this.save = save;
     }
 
     /**
@@ -49,9 +52,8 @@ public abstract class MethodObjectModel {
             return objectMapper.readValue(new File(path), MethodObjectModel.class);
     }
 
-    void run(MethodModel methodModel) {
-      Response req = methodModel.run(saveParams);
-
+    public void run(MethodModel methodModel) {
+    //  Response req = methodModel.run(save);
 
     }
 

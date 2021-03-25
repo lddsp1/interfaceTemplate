@@ -4,6 +4,13 @@ package priv.znd.service;
 
 import io.restassured.builder.ResponseBuilder;
 import io.restassured.response.Response;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import priv.znd.util.preutil.Imp.afterHandler;
+import priv.znd.util.preutil.Imp.prohandler;
+import priv.znd.util.preutil.PostProcessor;
+import priv.znd.util.preutil.ProProcessor;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -23,8 +30,9 @@ public class MethodModel {
     private List parammsg; //列表数据
     private String preProcessor; //是否进行报文前处理
     private String postProcessor; //是否进行报文后处理
-    private HashMap<String, String> save; //参数化需要从报文提取的保存
+    private HashMap<String, String> save; //参数化需要修改请求的值
     private HashMap<String,Object> headMaps; //报文头
+    private static final Logger logger = LoggerFactory.getLogger(MethodModel.class);
 
 
 
@@ -142,73 +150,48 @@ public class MethodModel {
     }
 
 
-/*public static MethodModel load(String path) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        return objectMapper.readValue(new File(path),MethodModel.class);
-    }*/
-
     /**
-     * 发送请求
-     * @param method
-     * @param msgRule
-     * @param header
+     * 发送请求报文前处理,进行参数化或加密，或添加证书
+     * @param handlemsg 请求报文
+     * @param dataPath  参数化的路径
      * @return
      */
-    private Response sendhttprequest(String method, String msgRule, HashMap<String,String> header){
-     //   Header Headers= new Header(header);
-        return given().headers(header).queryParam(msgRule).log().all().request(method,this.url).then().log().all().extract().response();
-    }
-
-    private HashMap<String,Object> preHandle(Object handlemsg)
-            throws ClassNotFoundException, IllegalAccessException,
-            InstantiationException, NoSuchMethodException, InvocationTargetException {
-        HashMap<String,Object>  remsg = null;
-        Class clazz = null;
-        if(preProcessor != null) {
-            clazz = Class.forName(preProcessor);
-            Object obj = clazz.newInstance();
-            Method method = obj.getClass().getMethod("prehandl", HashMap.class, handlemsg.getClass());
-            remsg = (HashMap<String, Object>) method.invoke(obj, "prehandl", headMaps, handlemsg);
-        }
-        else {
-            remsg.put("headMaps", headMaps);
-            remsg.put("req msg", handlemsg);
-        }
+    private Map<String,Object> preHandle(Object handlemsg,String dataPath){
+        Map<String,Object>  remsg = new HashMap<>();
+        ProProcessor proProcessor = new prohandler();
+        proProcessor.init(dataPath);
+        proProcessor.doMessage(headMaps, handlemsg);
         return remsg;
     }
 
-    private HashMap<String,Object> afterHandle( Object handlemsg)
-            throws ClassNotFoundException, IllegalAccessException,
-            InstantiationException, NoSuchMethodException, InvocationTargetException {
-        HashMap<String,Object>  remsg = null;
-        Class clazz ;
-        if(postProcessor != null ) {
-            clazz = Class.forName(postProcessor);
-            Object obj = clazz.newInstance();
-            Method method = obj.getClass().getMethod("afterhandl", HashMap.class, handlemsg.getClass());
-            remsg = (HashMap<String, Object>) method.invoke(obj, "afterhandl", headMaps, handlemsg);
-        }
-        else {
-            remsg.put("headMaps", headMaps);
-            remsg.put("resmsg", handlemsg);
-        }
-        return remsg;
+    /**
+     * 响应报文处理，进行解密类操作
+     * @param handlemsg 响应报文
+     * @return
+     */
+    private Response afterHandle(Response handlemsg){
+        PostProcessor postProcessor = new afterHandler();
+        return postProcessor.doMessage(handlemsg);
     }
-    
 
 
-
-    public Response run(HashMap<String, Object> saveparam) {
-        Response response = null ;
+    /**
+     * 发送RestAssured请求
+     * @param saveparam 上下文依赖参数
+     * @param dataPath  参数化参数全目录路径
+     * @return
+     */
+    public Response run(HashMap<String, Object> saveparam, String dataPath) {
+        Response response ;
         response = given().filter((req,res,ctx)->{
-            HashMap<String ,Object> result = null;
-            try {
+            Map<String ,Object> result = new HashMap<>();
                 if(bodymsg != null){
-                    result = preHandle(bodymsg);
+                    result = preHandle(bodymsg, dataPath);
                     bodymsg = result.get("handlemsg").toString();
                     if(save != null && saveparam != null){
-                        for (Map.Entry<String,  String> entry : save.entrySet()){
-                            bodymsg.replace(entry.getKey(), entry.getValue());
+                        for (Map.Entry<String,  Object> entry : saveparam.entrySet()){
+                            bodymsg.replace(entry.getKey(), entry.getValue().toString());
+                            logger.info("请求报文:"+bodymsg);
                         }
                         req.body(bodymsg);
                     }
@@ -225,71 +208,45 @@ public class MethodModel {
                     }
                 }*/
                 else if(querymsg != null){
-                    result = preHandle(querymsg);
+                    result = preHandle(querymsg, dataPath);
                     for(Map.Entry<String,Object> entry : ((HashMap<String, Object>) result.get("handlemsg")).entrySet()) {
                         String value = entry.getValue().toString();
-                        if (value.toString().contains("${") && value.contains("}")
+                        if (value.contains("${") && value.contains("}")
                                 && save != null && saveparam != null){
                             req.queryParam(entry.getKey(), saveparam.get(value));
+                            logger.info("queryParam的:"+entry.getKey()+"\nvalue:"+ saveparam.get(value));
                         }
                         else
                             req.queryParam(entry.getKey(), value);
                     }
                 }
                 else if(formmsg != null){
-                    result = preHandle(formmsg);
+                    result = preHandle(formmsg, dataPath);
                     for(Map.Entry<String,Object> entry : ((HashMap<String, Object>) result.get("handlemsg")).entrySet()) {
                         String value = entry.getValue().toString();
                         if (value.contains("${") && value.contains("}")
                                 && save != null && saveparam != null){
                                 req.formParam(entry.getKey(), saveparam.get(value));
+                                logger.info("formParam的:"+entry.getKey()+"\nvalue:"+ saveparam.get(value));
                             }
                         else
                             req.formParam(entry.getKey(),entry.getValue());
                     }
                 }
-
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            }
-
             if(headMaps !=null){
                 headMaps = (HashMap<String,  Object>) result.get("headMaps");
                 for(Map.Entry<String,?> entry : headMaps.entrySet()){
+                    logger.info("报文头为:"+entry.getKey()+"\nvalue:");
                     req.header(entry.getKey(),entry.getValue());
                 }
             }
             Response responseOnly = ctx.next(req,res);
-            Map<String, ?> postRes = new HashMap<>();
-            try {
-                postRes = afterHandle(responseOnly);
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            }
-           Response responseReturn =new ResponseBuilder().clone(responseOnly)
-                   .setBody(postRes.get("resmsg").toString())
-                   .build();
-            return responseReturn;
+            Response postRes = afterHandle(responseOnly);
+            logger.info("响应报文为:" + postRes.getBody().asString());
+            return postRes;
             }).log().all()
             .when().log().all().request(sendRule.get("httpmethod"),url)
             .then().extract().response();
         return response;
     }
-
 }

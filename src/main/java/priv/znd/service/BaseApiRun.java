@@ -31,7 +31,7 @@ public class BaseApiRun {
      * 保存所有的接口信息
      */
     List<MethodObjectModel> apis = new ArrayList<MethodObjectModel>();
-    private HashMap<String,Response> result;
+    //private HashMap<String,Response> result;
     private HashMap<String,String> save; //参数化需要从报文提取的保存
     private HashMap<String,Object> saveparam = new HashMap<>(); //参数化数据保存
     private HashMap<String,String> respondbody = new HashMap<>();//保存响应体
@@ -51,7 +51,6 @@ public class BaseApiRun {
      */
     public void load(String dir){
         logger.info("加载接口内容");
-
         Arrays.stream(new File(dir).list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
@@ -60,7 +59,7 @@ public class BaseApiRun {
             }
         })).forEach(path-> {
             try {
-                apis.add(MethodObjectModel.load(dir+"/"+path));
+                apis.add(MethodObjectModel.load(dir+"/"+path));//导入当前路径的所有接口
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -82,6 +81,7 @@ public class BaseApiRun {
                 if(m.find()){
                     for(int i = 1;i<= m.groupCount();i++){
                         saveparam.put("${"+entry.getKey()+i+"}",m.group(i).trim());
+                        logger.info("保存上下文依赖:{"+entry.getKey()+i+"}"+m.group(i).trim());
                     }
                 }
             }
@@ -95,11 +95,14 @@ public class BaseApiRun {
         HashMap<String,Object> metherResult = null;
             apis.stream().forEach(api ->{
             if(api.getName().equals(step.get("apiObject").toString())){
-                Response onlyRespone = api.getMethods().get(step.get("action")).run(saveparam);
+                String contextPath = (step.get("dataPath") != null)?step.get("dataPath").toString():"";
+                Response onlyRespone = api.getMethods().get(step.get("action")).run(saveparam,contextPath);
+                save = api.getSave();
                 setSaveparam(onlyRespone);
                 respondbody.put(step.get("stepname").toString(),onlyRespone.getBody().asString());
+                logger.info(step.get("stepname").toString()+"执行结果的响应报文:"+onlyRespone.getBody().asString());
             }
-            else if(step.get("assertjson") != null){
+            if(step.get("assertjson") != null){
                 String asserresp = respondbody.get(step.get("assertstep").toString());
                 /**
                 *  JSONCompareMode.LENIENT 可数据扩展，相同数据顺序可以不一样
@@ -150,8 +153,11 @@ public class BaseApiRun {
                                     if (comparison.getControlDetails().getValue() instanceof Integer) {
                                         a = (Integer) comparison.getControlDetails().getValue();
                                     }
-                                    if (comparison.getControlDetails().getValue() instanceof Integer) {
+                                    /*if (comparison.getControlDetails().getValue() instanceof Integer) {
                                         b = (Integer) comparison.getControlDetails().getValue();
+                                    }*/
+                                    if(comparison.getTestDetails().getValue() instanceof Integer){
+                                        b = (Integer) comparison.getTestDetails().getValue();
                                     }
                                     if (("CHILD_NODELIST_LENGTH".equals(comparison.getType().toString()) && a < b) ||
                                             (("CHILD_NODELIST_SEQUENCE".equals(comparison.getType().toString()))) ||

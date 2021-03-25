@@ -6,10 +6,12 @@ steps:
   - apiObject: XXXXX
    #执行的操作接口
     action: XXXX
+    #需要参数化输入的值
+    save: XXXXX
     #步骤名称
     stepname: XXXX
-    #上下文参数化
-    #replaceparam:
+    #上下文参数化data地址
+    dataPath: XXXXXX
      # ddd: cccc
 
     #断言参数
