@@ -1,0 +1,18 @@
+#案例名称
+name: XXXX
+#执行步骤
+steps:
+  #对应的apiObject名称name
+  - apiObject: XXXXX
+   #执行的操作接口
+    action: XXXX
+    #步骤名称
+    stepname: XXXX
+    #上下文参数化
+    #replaceparam:
+     # ddd: cccc
+
+    #断言参数
+   " assertjson | assertxml: XXXXXXXXXX
+    #断言的步骤名
+    assertstep: XXXXX"

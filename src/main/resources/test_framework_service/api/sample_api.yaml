@@ -1,0 +1,21 @@
+#API_OBJECT的名称
+name: XXXX
+methods:
+  #接口名称
+  { name }:
+    #请求的url地址
+    url: XXXXX
+    #请求类型post/get/put/del/update
+    protocol: XXXXX
+    #请求报文格式（格式application/json或者application/xml）
+    msgRule: XXXX
+    #请求报文  | 查询报文 | 表单数据 只能其中一个参数
+    bodymsg | querymsg | formmsg: XXX
+    #发送报文前处理
+    preProcessor: XXXX
+    #发送报文后处理
+    postProcessor: XXXX
+    #要参数的字段xpath正则匹配
+    save:
+      ${ param }: {xpath}
+      ${ param1 }: {xpath}
