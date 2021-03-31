@@ -1,5 +1,7 @@
 package priv.znd.service;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.slf4j.Logger;
@@ -16,9 +18,10 @@ import java.util.List;
  * @author lddsp
  * @date 2021/3/9 7:03
  */
+
 public class TestCaseSteps {
     private String name;
-    private String decription;
+    private String description;
     private List<HashMap<String,Object>> steps = new ArrayList<>();
     private List<HashMap<String,Object>> execresult = new ArrayList<>();
 
@@ -32,25 +35,28 @@ public class TestCaseSteps {
         this.name = name;
     }
 
-    public String getDecription() {
-        return decription;
+    public String getDescription() {
+        return description;
     }
 
-    public void setDecription(String decription) {
-        this.decription = decription;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public List<HashMap<String, Object>> getStep() {
+    public List<HashMap<String, Object>> getSteps() {
         return steps;
     }
 
-    public void setStep(List<HashMap<String, Object>> step) {
+    public void setStep(List<HashMap<String, Object>> steps) {
         this.steps = steps;
     }
 
-    public TestCaseSteps load(String path) throws IOException {
+
+   @JsonIgnoreProperties (ignoreUnknown = true)
+    public static TestCaseSteps load(String path) throws IOException {
         logger.info("导入测试案例集");
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return objectMapper.readValue(new File(path), TestCaseSteps.class);
     }
 

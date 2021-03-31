@@ -1,8 +1,9 @@
 package priv.znd.service;
 
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.restassured.response.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,9 +11,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 
-public abstract class MethodObjectModel {
+/**
+ * @author lddsp
+ * @date 2021/3/28 23:07
+ */
+public class MethodObjectModel {
     private String name;
-    private HashMap<String, MethodModel> methods;
+    private HashMap<String, MethodModel> methods =  new HashMap<>();
     private HashMap<String, String> save = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(MethodObjectModel.class);
 
@@ -37,7 +42,7 @@ public abstract class MethodObjectModel {
         return save;
     }
 
-    public void setSave(HashMap<String, String> saveParams) {
+    public void setSave(HashMap<String, String> save) {
         this.save = save;
     }
 
@@ -47,15 +52,17 @@ public abstract class MethodObjectModel {
      * @return
      * @throws IOException
      */
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static MethodObjectModel load(String path) throws IOException {
+        logger.info("加载apiObject");
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
             return objectMapper.readValue(new File(path), MethodObjectModel.class);
     }
 
-    public void run(MethodModel methodModel) {
-    //  Response req = methodModel.run(save);
+    /*public void run(MethodModelcopy MethodModelcopy) {
+    //  Response req = MethodModelcopy.run(save);
 
-    }
+    }*/
 
 
 }

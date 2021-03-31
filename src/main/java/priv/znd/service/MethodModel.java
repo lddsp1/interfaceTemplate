@@ -2,48 +2,33 @@ package priv.znd.service;
 
 
 
-import io.restassured.builder.ResponseBuilder;
+import com.alibaba.testable.core.annotation.MockWith;
 import io.restassured.response.Response;
-import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import priv.znd.util.preutil.Imp.afterHandler;
-import priv.znd.util.preutil.Imp.prohandler;
-import priv.znd.util.preutil.PostProcessor;
-import priv.znd.util.preutil.ProProcessor;
+import priv.znd.util.handler.Imp.afterHandler;
+import priv.znd.util.handler.Imp.prohandler;
+import priv.znd.util.handler.PostProcessor;
+import priv.znd.util.handler.ProProcessor;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 
+
 public class MethodModel {
-    private String name; //接口
     private String url; //请求地址
     private String protocol; //请求规则
-    private HashMap<String, String> sendRule; //http或https
     private String msgRule; //格式application/json或者application/xml
     private String bodymsg; //请求报文
-    private HashMap<String,Object> querymsg; //查询报文
-    private HashMap<String,Object> formmsg; //表单数据
-    private List parammsg; //列表数据
+    private HashMap<String, Object> querymsg = new HashMap<>(); //查询报文
+    private HashMap<String, Object> formmsg = new HashMap<>(); //表单数据
     private String preProcessor; //是否进行报文前处理
     private String postProcessor; //是否进行报文后处理
-    private HashMap<String, String> save; //参数化需要修改请求的值
-    private HashMap<String,Object> headMaps; //报文头
+    private HashMap<String, Object> save = new HashMap<>(); //参数化需要修改请求的值
+    private HashMap<String, Object>  headMaps = new HashMap<>(); //报文头
     private static final Logger logger = LoggerFactory.getLogger(MethodModel.class);
-
-
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
 
     public String getUrl() {
         return url;
@@ -58,47 +43,7 @@ public class MethodModel {
     }
 
     public void setProtocol(String protocol) {
-        this.protocol = protocol.toLowerCase();
-    }
-
-    public HashMap<String, String> getSendRule() {
-        return sendRule;
-    }
-
-    public void setSendRule(HashMap<String, String> sendRule) {
-        this.sendRule = sendRule;
-    }
-
-    public String getmsgRule() {
-        return msgRule;
-    }
-
-    public void setmsgRule(String msgRule) {
-        this.msgRule = msgRule;
-    }
-
-    public HashMap<String, String> getSave() {
-        return save;
-    }
-
-    public void setSave(HashMap<String, String> save) {
-        this.save = save;
-    }
-
-    public HashMap<String, ?> getHeadMaps() {
-        return headMaps;
-    }
-
-    public void setHeadMaps(HashMap<String, Object> headMaps) {
-        this.headMaps = headMaps;
-    }
-
-    public String getPreProcessor() {
-        return preProcessor;
-    }
-
-    public void setPreProcessor(String preProcessor) {
-        this.preProcessor = preProcessor;
+        this.protocol = protocol;
     }
 
     public String getMsgRule() {
@@ -117,7 +62,7 @@ public class MethodModel {
         this.bodymsg = bodymsg;
     }
 
-    public HashMap<String,  Object> getQuerymsg() {
+    public HashMap<String, Object> getQuerymsg() {
         return querymsg;
     }
 
@@ -133,12 +78,12 @@ public class MethodModel {
         this.formmsg = formmsg;
     }
 
-    public List<?> getParammsg() {
-        return parammsg;
+    public String getPreProcessor() {
+        return preProcessor;
     }
 
-    public void setParammsg(List parammsg) {
-        this.parammsg = parammsg;
+    public void setPreProcessor(String preProcessor) {
+        this.preProcessor = preProcessor;
     }
 
     public String getPostProcessor() {
@@ -149,6 +94,22 @@ public class MethodModel {
         this.postProcessor = postProcessor;
     }
 
+    public HashMap<String, Object> getSave() {
+        return save;
+    }
+
+    public void setSave(HashMap<String, Object> save) {
+        this.save = save;
+    }
+
+    public HashMap<String, Object> getHeadMaps() {
+        return headMaps;
+    }
+
+    public void setHeadMaps(HashMap<String, Object> headMaps) {
+        this.headMaps = headMaps;
+    }
+
 
     /**
      * 发送请求报文前处理,进行参数化或加密，或添加证书
@@ -157,10 +118,10 @@ public class MethodModel {
      * @return
      */
     private Map<String,Object> preHandle(Object handlemsg,String dataPath){
-        Map<String,Object>  remsg = new HashMap<>();
+        Map<String,Object>  remsg ;
         ProProcessor proProcessor = new prohandler();
         proProcessor.init(dataPath);
-        proProcessor.doMessage(headMaps, handlemsg);
+        remsg = proProcessor.doMessage(headMaps, handlemsg);
         return remsg;
     }
 
@@ -185,18 +146,18 @@ public class MethodModel {
         Response response ;
         response = given().filter((req,res,ctx)->{
             Map<String ,Object> result = new HashMap<>();
-                if(bodymsg != null){
-                    result = preHandle(bodymsg, dataPath);
-                    bodymsg = result.get("handlemsg").toString();
-                    if(save != null && saveparam != null){
-                        for (Map.Entry<String,  Object> entry : saveparam.entrySet()){
-                            bodymsg.replace(entry.getKey(), entry.getValue().toString());
-                            logger.info("请求报文:"+bodymsg);
-                        }
-                        req.body(bodymsg);
+            if(bodymsg != null){
+                result = preHandle(bodymsg, dataPath);
+                bodymsg = result.get("handlemsg").toString();
+                if(save != null && saveparam != null){
+                    for (Map.Entry<String,  Object> entry : saveparam.entrySet()){
+                        bodymsg.replace(entry.getKey(), entry.getValue().toString());
+                        logger.info("请求报文:"+bodymsg);
                     }
-
+                    req.body(bodymsg);
                 }
+
+            }
             /*    else if(parammsg != null){
                     result = preHandle("pre", parammsg);
                     parammsg = (List) result.get("parammsg");
@@ -207,46 +168,50 @@ public class MethodModel {
                         req.param(parammsg);
                     }
                 }*/
-                else if(querymsg != null){
-                    result = preHandle(querymsg, dataPath);
-                    for(Map.Entry<String,Object> entry : ((HashMap<String, Object>) result.get("handlemsg")).entrySet()) {
-                        String value = entry.getValue().toString();
-                        if (value.contains("${") && value.contains("}")
-                                && save != null && saveparam != null){
-                            req.queryParam(entry.getKey(), saveparam.get(value));
-                            logger.info("queryParam的:"+entry.getKey()+"\nvalue:"+ saveparam.get(value));
-                        }
-                        else
-                            req.queryParam(entry.getKey(), value);
+            else if(querymsg != null){
+                result = preHandle(querymsg, dataPath);
+                for(Map.Entry<String,Object> entry : ((HashMap<String, Object>) result.get("handlemsg")).entrySet()) {
+                    String value = entry.getValue().toString();
+                    if (value.contains("${") && value.contains("}")
+                            && save != null && saveparam != null){
+                        req.queryParam(entry.getKey(), saveparam.get(value));
+                        logger.info("queryParam的:"+entry.getKey()+"\nvalue:"+ saveparam.get(value));
                     }
+                    else
+                        req.queryParam(entry.getKey(), value);
                 }
-                else if(formmsg != null){
-                    result = preHandle(formmsg, dataPath);
-                    for(Map.Entry<String,Object> entry : ((HashMap<String, Object>) result.get("handlemsg")).entrySet()) {
-                        String value = entry.getValue().toString();
-                        if (value.contains("${") && value.contains("}")
-                                && save != null && saveparam != null){
-                                req.formParam(entry.getKey(), saveparam.get(value));
-                                logger.info("formParam的:"+entry.getKey()+"\nvalue:"+ saveparam.get(value));
-                            }
-                        else
-                            req.formParam(entry.getKey(),entry.getValue());
+            }
+            else if(formmsg != null){
+                result = preHandle(formmsg, dataPath);
+                for(Map.Entry<String,Object> entry : ((HashMap<String, Object>) result.get("handlemsg")).entrySet()) {
+                    String value = entry.getValue().toString();
+                    if (value.contains("${") && value.contains("}")
+                            && save != null && saveparam != null){
+                        req.formParam(entry.getKey(), saveparam.get(value));
+                        logger.info("formParam的:"+entry.getKey()+"\nvalue:"+ saveparam.get(value));
                     }
+                    else
+                        req.formParam(entry.getKey(),entry.getValue());
                 }
+            }
             if(headMaps !=null){
                 headMaps = (HashMap<String,  Object>) result.get("headMaps");
-                for(Map.Entry<String,?> entry : headMaps.entrySet()){
+                for(Map.Entry<String,Object> entry : headMaps.entrySet()){
                     logger.info("报文头为:"+entry.getKey()+"\nvalue:");
                     req.header(entry.getKey(),entry.getValue());
                 }
             }
             Response responseOnly = ctx.next(req,res);
-            Response postRes = afterHandle(responseOnly);
+            Response postRes = null;
+            if (responseOnly == null) {
+                postRes = afterHandle(responseOnly);
+            }
             logger.info("响应报文为:" + postRes.getBody().asString());
             return postRes;
-            }).log().all()
-            .when().log().all().request(sendRule.get("httpmethod"),url)
-            .then().extract().response();
+        }).log().all()
+                .when().log().all().request(this.protocol,url)
+                .then().extract().response();
         return response;
     }
+
 }

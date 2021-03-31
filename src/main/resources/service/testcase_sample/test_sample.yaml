@@ -1,0 +1,21 @@
+#案例名称
+name: testName
+#案例描述
+#description: testdescri
+#执行步骤
+steps:
+  #对应的apiObject名称name
+  - apiObject: apiName
+   #执行的操作接口
+    action: doAction
+    #需要参数化输入的值
+    save:
+      xxx: saveparam
+    #步骤名称
+    stepname: stepName
+    #上下文参数化data地址
+    dataPath: dataPath
+     # ddd: cccc
+
+    #断言参数
+    assertjson | assertxml: XXXXXXXXXX

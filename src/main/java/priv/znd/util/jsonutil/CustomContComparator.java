@@ -1,6 +1,6 @@
 package priv.znd.util.jsonutil;
 
-import com.sun.tools.javac.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -47,13 +47,12 @@ public class CustomContComparator extends CustomComparator {
                 } else if (expectedValue instanceof JSONObject) {
                     compareJSON(prefix, (JSONObject) expectedValue, (JSONObject) actualValue, result);
                 } else if (!expectedValue.equals(actualValue)) {
-                    if ("".equals("expectedValue"))
-                    result.fail(prefix, expectedValue, actualValue);
-                } else
-                    result.fail(prefix, expectedValue, actualValue);
+                    if (!StringUtils.isEmpty(expectedValue.toString())) {
+                        result.fail(prefix, expectedValue, actualValue);
+                    }
+                }
             } else {
                 result.fail(prefix, expectedValue, actualValue);
-
             }
         }
     }

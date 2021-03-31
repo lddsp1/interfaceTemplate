@@ -2,3 +2,5 @@
 /.idea/
 /allure-results/
 /testtemplate.iml
+/src/main/resources/service/
+!/src/main/resources/service/*_sample/

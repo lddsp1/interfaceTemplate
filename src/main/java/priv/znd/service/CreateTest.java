@@ -2,6 +2,7 @@ package priv.znd.service;
 
 import io.qameta.allure.*;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -27,9 +28,11 @@ public class CreateTest {
     @Description()
     @Step("Type {testCaseSteps.name}")
     void apiTest(TestCaseSteps testCaseSteps ,String name){
-        Allure.description(testCaseSteps.getDecription());
+        Allure.description(testCaseSteps.getDescription());
         testCaseSteps.run(baseApiRun);
+        //TODO:断言
     }
+
 
     public List<Arguments> apiTest(){
         //保存参数化案例数据

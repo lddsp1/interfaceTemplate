@@ -1,0 +1,14 @@
+#ApiTestCaseModel
+name: add
+description: ddd
+steps:
+  - apiObject: wework
+    action: get_token
+    assertjson: xxxx
+  - apiObject: wework
+    action:
+    save:
+      tagid: [1,2,3]
+
+
+

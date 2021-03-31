@@ -1,6 +1,7 @@
 package priv.znd.service;
 
 import io.restassured.response.Response;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONException;
 import org.skyscreamer.jsonassert.JSONCompare;
 import org.skyscreamer.jsonassert.JSONCompareMode;
@@ -11,6 +12,8 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xmlunit.builder.DiffBuilder;
 import org.xmlunit.diff.*;
+import priv.znd.util.jsonutil.CustomContComparator;
+import priv.znd.util.xmlutil.CunstomXmlDvaluator;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -28,10 +31,7 @@ import static org.xmlunit.diff.ComparisonResult.DIFFERENT;
  */
 public class BaseApiRun {
 
-    /**
-     * 保存所有的接口信息
-     */
-    private List<MethodObjectModel> apis = new ArrayList<MethodObjectModel>();
+    private List<MethodObjectModel> apis = new ArrayList<MethodObjectModel>(); //保存所有的接口信息
     //private HashMap<String,Response> result;
     private HashMap<String,String> save; //参数化需要从报文提取的保存
     private HashMap<String,Object> saveparam = new HashMap<>(); //参数化数据保存
@@ -51,7 +51,7 @@ public class BaseApiRun {
     }
 
     /**
-     *
+     *上下文案例依赖参数保存
      * @param response
      */
     private void setSaveparam(Response response) {
@@ -74,14 +74,14 @@ public class BaseApiRun {
 
     /**
      * 加载所有的api object对象，并保存到一个列表里
-     * @param dir
+     * @param dir //到文件夹路径
      */
     public void load(String dir){
         logger.info("加载接口内容");
         Arrays.stream(new File(dir).list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                //todo: filter
+                //todo: 筛选文件，
                 return true;
             }
         })).forEach(path-> {
@@ -95,25 +95,19 @@ public class BaseApiRun {
 
     /**
      * 进行Json的结果比较
-     * @param expected
-     * @param actual
-     * @return
+     * @param expected 预期值
+     * @param actual 实际值
+     * @return 比较结果
      * @throws JSONException
      */
     private HashMap<String, Object> compareJson
-            (HashMap<String, Object> expected, String actual,String caseName)
+            (String expected, String actual,String caseName)
             throws JSONException {
-        JSONCompareMode compareMode = JSONCompareMode.LENIENT;
-        String expectedStr;
         HashMap<String, Object>  jsonResult =new HashMap<>();
-       if (expected.get("equals") != null ){
-            compareMode = JSONCompareMode.NON_EXTENSIBLE;
-            expectedStr = expected.get("equals").toString();
-        }else
-           expectedStr = expected.get("contain").toString();
-        JSONCompareResult result = JSONCompare.compareJSON(expectedStr, actual,
-                compareMode);
+        JSONCompareResult result = JSONCompare.compareJSON(expected, actual,
+                new CustomContComparator(JSONCompareMode.LENIENT));
         boolean  Success = result.passed();
+        //System.out.println("比较结果：" + Success);
         String msg = result.getMessage();
         if(!Success) {
             msg = msg.replaceAll("Could not find match for element", "无法找到指定元素");
@@ -128,57 +122,27 @@ public class BaseApiRun {
         }else
             jsonResult.put("resultmsg","执行成功\n");
         jsonResult.put("resultflag",Success);
+        jsonResult.put("stepname",caseName);
         return jsonResult;
     }
 
     /**
      * Xml响应报文对比
-     * @param expected
-     * @param actual
-     * @param caseName
-     * @return
+     * @param expected 预期值
+     * @param actual 实际值
+     * @param caseName 案例名称
+     * @return 比较结果
      */
     private HashMap<String, Object> compareXml
-            (HashMap<String, Object> expected, String actual,String caseName){
+            (String expected, String actual,String caseName){
         HashMap<String, Object> xmlResult = new HashMap<>();
-        Diff xmlDiff = DiffBuilder.compare(expected.get("assertxml").toString()).withTest(actual)
+        Diff xmlDiff = DiffBuilder.compare(expected).withTest(actual)
                 .checkForSimilar()
                 .ignoreElementContentWhitespace()
                 .ignoreComments()
                 .ignoreWhitespace()
                 .withNodeMatcher(new DefaultNodeMatcher(ElementSelectors.byNameAndAllAttributes))
-                .withDifferenceEvaluator(new DifferenceEvaluator() {
-                    /**
-                     * 对整形参数值进行处理比如1.0和1.00
-                     * @param comparison 比较器
-                     * @param outcome 比较结果
-                     * @return
-                     */
-                    @Override
-                    public ComparisonResult evaluate(Comparison comparison, ComparisonResult outcome) {
-                        if(DIFFERENT.equals(outcome)) {
-                            int a = 0;
-                            int b = 0;
-                            if (comparison.getControlDetails().getValue() instanceof Integer) {
-                                a = (Integer) comparison.getControlDetails().getValue();
-                            }
-                                    /*if (comparison.getControlDetails().getValue() instanceof Integer) {
-                                        b = (Integer) comparison.getControlDetails().getValue();
-                                    }*/
-                            if(comparison.getTestDetails().getValue() instanceof Integer){
-                                b = (Integer) comparison.getTestDetails().getValue();
-                            }
-                            if (("CHILD_NODELIST_LENGTH".equals(comparison.getType().toString()) && a < b) ||
-                                    (("CHILD_NODELIST_SEQUENCE".equals(comparison.getType().toString()))) ||
-                                    (("CHILD_LOOKUP".equals(comparison.getType().toString()))
-                                            && comparison.getControlDetails().getXPath() == null)) {
-                                outcome = null;
-                            }
-                        }
-                        return outcome;
-
-                    }
-                })
+                .withDifferenceEvaluator(new CunstomXmlDvaluator())
                 .build();
         boolean  Success = xmlDiff.hasDifferences();
         //Iterable<Difference> msgIters = xmlDiff.getDifferences();
@@ -232,20 +196,24 @@ public class BaseApiRun {
                     }
                     result += "节点"+controllNodePath+"预期结果"+controllNode.getTextContent().trim()+",";
                     result += node !=null ? "预期结果"+node.getTextContent().trim()+";\n":"实际结果";
-                    xmlResult.put("resultmsg", result);
+                    xmlResult.put("resultmsg", result.trim());
                 }
             }
         }else
             xmlResult.put("resultmsg","执行成功\n");
-        xmlResult.put("resultflag",Success);
+        xmlResult.put("resultflag",!Success);
         xmlResult.put("stepname",caseName);
         return xmlResult;
     }
 
 
-
     /**
      *根据测试用例提供的api Object和对应的action，检索对应的api，并调用对应的方法
+     * @param step 案例的执行步骤
+     * @return 返回案例的执行结果包含
+     * resultmsg 执行信息
+     * resultflag 执行结果（true|false）
+     * stepname 案例名称
      */
     public HashMap<String, Object> run(HashMap<String, Object> step){
         AtomicReference<HashMap<String, Object>> metherResult = new AtomicReference<>(new HashMap<>());
@@ -255,35 +223,39 @@ public class BaseApiRun {
             if(api.getName().equals(step.get("apiObject").toString())){
             String contextPath = (step.get("dataPath") != null)?step.get("dataPath").toString():"";
             onlyRespone = api.getMethods().get(step.get("action")).run(saveparam,contextPath);
-            String asserresp = onlyRespone.getBody().asString();
-            if (asserresp != null || "".equals(asserresp)) {
+            String asserresp = null;
+            if(onlyRespone != null) {
+                asserresp = onlyRespone.getBody().asString();
+            }
+                // System.out.println(asserresp);
+                if (asserresp != null || StringUtils.isNotEmpty(asserresp)) {
                 save = api.getSave();
                 setSaveparam(onlyRespone);
 //                respondbody.put(step.get("stepname").toString(),onlyRespone.getBody().asString());
                 logger.info(step.get("stepname").toString() + "执行结果的响应报文:" + asserresp);
                 if (step.get("assertjson") != null) {
                     try {
-                        comResult = compareJson((HashMap<String, Object>) step.get("assertjson"), asserresp, step.get("stepname").toString());
-                        metherResult.set(comResult);
+                        comResult = compareJson(step.get("assertjson").toString(), asserresp, step.get("stepname").toString());
                     } catch (JSONException e) {
                         e.printStackTrace();
                         comResult = null;
-                        metherResult.set(comResult);
                         logger.error("预期响应报文json格式有误:" + step.get("assertjson"));
                     }
                 } else if (step.get("assertxml") != null) {
-                    comResult = compareXml((HashMap<String, Object>) step.get("assertxml"), asserresp, step.get("stepname").toString());
-                    metherResult.set(comResult);
+                    comResult = compareXml( step.get("assertxml").toString(), asserresp, step.get("stepname").toString());
+
                 } else {
                     comResult.put("resultmsg", "执行成功\n");
                     comResult.put("resultflag", true);
                     comResult.put("stepname", step.get("stepname"));
-                    metherResult.set(comResult);
                 }
-                if (step.get("containkey") != null) {
-                    // onlyRespone.then().body()
-                }
+
+            } else{
+                    comResult.put("resultmsg", "执行失败，响应报文为null\n");
+                    comResult.put("resultflag", false);
+                    comResult.put("stepname", step.get("stepname"));
             }
+                metherResult.set(comResult);
             }
         });
         return metherResult.get();
