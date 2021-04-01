@@ -1,8 +1,7 @@
 package priv.znd.service;
 
 import io.qameta.allure.*;
-import org.junit.jupiter.api.RepeatedTest;
-import org.junit.jupiter.api.Test;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -11,8 +10,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 /**
@@ -29,8 +28,14 @@ public class CreateTest {
     @Step("Type {testCaseSteps.name}")
     void apiTest(TestCaseSteps testCaseSteps ,String name){
         Allure.description(testCaseSteps.getDescription());
-        testCaseSteps.run(baseApiRun);
-        //TODO:断言
+        List<HashMap<String,Object>> results = testCaseSteps.run(baseApiRun);
+        SoftAssertions softAssert = new SoftAssertions();
+        results.stream().forEach(
+                result->softAssert.assertThat(result.get("resultflag"))
+                        .as("%s执行结果:\n%s",result.get("stepname"),result.get("resultmsg").toString())
+                        .isEqualTo(true)
+        );
+        softAssert.assertAll();
     }
 
 

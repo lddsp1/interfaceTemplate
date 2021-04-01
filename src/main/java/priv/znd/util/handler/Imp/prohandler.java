@@ -15,7 +15,6 @@ public class prohandler implements ProProcessor {
     @Override
     public void init(String dataPath) {
         System.out.println("prohandler运行init");
-
     }
     @Override
     public Map<String, Object> doMessage(Map<String, Object> headers, Object message) {

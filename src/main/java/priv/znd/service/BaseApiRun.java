@@ -18,6 +18,7 @@ import priv.znd.util.xmlutil.CunstomXmlDvaluator;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -46,6 +47,19 @@ public class BaseApiRun {
         return saveparam;
     }
 
+    public void setApis(List<MethodObjectModel> apis) {
+        this.apis = apis;
+    }
+
+    public HashMap<String, String> getSave() {
+        return save;
+    }
+
+    public void setSave(HashMap<String, String> save) {
+        this.save = save;
+    }
+
+
     public void setSaveparam(HashMap<String, Object> saveparam) {
         this.saveparam = saveparam;
     }
@@ -55,17 +69,18 @@ public class BaseApiRun {
      * @param response
      */
     private void setSaveparam(Response response) {
-        if(save != null){
+
+        if(this.save != null){
             String resStr = response.getBody().asString();
             for (Map.Entry<String, String> entry : save.entrySet()){
                 String token = entry.getValue();
                 Pattern r = Pattern.compile(token);
                 Matcher m = r.matcher(resStr);
-                if(m.find()){
-                    for(int i = 1;i<= m.groupCount();i++){
-                        saveparam.put("${"+entry.getKey()+i+"}",m.group(i).trim());
-                        logger.info("保存上下文依赖:{"+entry.getKey()+i+"}"+m.group(i).trim());
-                    }
+                int i = 1;
+                while(m.find()){
+                    saveparam.put("${"+entry.getKey()+i+"}",m.group(1).trim());
+                    logger.info("保存上下文依赖:{"+entry.getKey()+i+"}"+m.group(1).trim());
+                    i++;
                 }
             }
         }

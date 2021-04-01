@@ -4,6 +4,7 @@ package priv.znd.service;
 
 import com.alibaba.testable.core.annotation.MockWith;
 import io.restassured.response.Response;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import priv.znd.util.handler.Imp.afterHandler;
@@ -11,6 +12,8 @@ import priv.znd.util.handler.Imp.prohandler;
 import priv.znd.util.handler.PostProcessor;
 import priv.znd.util.handler.ProProcessor;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,7 +22,7 @@ import static io.restassured.RestAssured.given;
 
 public class MethodModel {
     private String url; //请求地址
-    private String protocol; //请求规则
+    private String protocol = "get"; //请求规则
     private String msgRule; //格式application/json或者application/xml
     private String bodymsg; //请求报文
     private HashMap<String, Object> querymsg = new HashMap<>(); //查询报文
@@ -142,16 +145,27 @@ public class MethodModel {
      * @param dataPath  参数化参数全目录路径
      * @return
      */
-    public Response run(HashMap<String, Object> saveparam, String dataPath) {
+    public Response run(HashMap<String, Object> saveparam, String dataPath)  {
         Response response ;
+        URL url = null;
+        if(this.url==null|| StringUtils.isEmpty(this.url)){
+            logger.error("url地址不能为空");
+            return null;
+        }
+        try {
+            url = new URL(this.url);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            logger.error("url地址不能为空");
+        }
         response = given().filter((req,res,ctx)->{
             Map<String ,Object> result = new HashMap<>();
             if(bodymsg != null){
                 result = preHandle(bodymsg, dataPath);
                 bodymsg = result.get("handlemsg").toString();
-                if(save != null && saveparam != null){
+                if(saveparam != null){
                     for (Map.Entry<String,  Object> entry : saveparam.entrySet()){
-                        bodymsg.replace(entry.getKey(), entry.getValue().toString());
+                        bodymsg=bodymsg.replace(entry.getKey(), entry.getValue().toString());
                         logger.info("请求报文:"+bodymsg);
                     }
                     req.body(bodymsg);
@@ -173,7 +187,7 @@ public class MethodModel {
                 for(Map.Entry<String,Object> entry : ((HashMap<String, Object>) result.get("handlemsg")).entrySet()) {
                     String value = entry.getValue().toString();
                     if (value.contains("${") && value.contains("}")
-                            && save != null && saveparam != null){
+                           && saveparam != null){
                         req.queryParam(entry.getKey(), saveparam.get(value));
                         logger.info("queryParam的:"+entry.getKey()+"\nvalue:"+ saveparam.get(value));
                     }
@@ -186,7 +200,7 @@ public class MethodModel {
                 for(Map.Entry<String,Object> entry : ((HashMap<String, Object>) result.get("handlemsg")).entrySet()) {
                     String value = entry.getValue().toString();
                     if (value.contains("${") && value.contains("}")
-                            && save != null && saveparam != null){
+                             && saveparam.get(value) != null){
                         req.formParam(entry.getKey(), saveparam.get(value));
                         logger.info("formParam的:"+entry.getKey()+"\nvalue:"+ saveparam.get(value));
                     }
@@ -201,16 +215,24 @@ public class MethodModel {
                     req.header(entry.getKey(),entry.getValue());
                 }
             }
+
+            System.out.println(req.getHeaders()+"|"+req.getMethod()+"|"+req.getBody()+"|"+req.getURI());
+
+
             Response responseOnly = ctx.next(req,res);
             Response postRes = null;
-            if (responseOnly == null) {
+            if (responseOnly != null) {
                 postRes = afterHandle(responseOnly);
+                logger.info("响应报文为:" + postRes.getBody().asString());
             }
-            logger.info("响应报文为:" + postRes.getBody().asString());
             return postRes;
         }).log().all()
-                .when().log().all().request(this.protocol,url)
-                .then().extract().response();
+                .when().log().all()
+                .request(this.protocol, url)
+                .then()
+                .extract()
+                .response();
+
         return response;
     }
 
