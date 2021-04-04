@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
  * @date 2021/3/28 21:53
  */
 class MethodObjectModelTest {
-    private String path = "src/main/resources/test_framework_service/api_sample/api_sample.yaml";
+    private String path = "src/main/resources/service/api_sample/api_sample.yaml";
     private static MethodObjectModel methodObjectModel;
 
 

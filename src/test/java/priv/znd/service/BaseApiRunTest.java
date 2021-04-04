@@ -27,8 +27,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class BaseApiRunTest {
     BaseApiRun baseApiRun = new BaseApiRun();
     MethodModel methodModel = new MethodModel();
-    private String path = "src/main/resources/test_framework_service/api_unittest";
-    private String path1 = "src/main/resources/test_framework_service/api_unittest";
+    private String path = "src/main/resources/service/api_unittest";
+    private String path1 = "src/main/resources/service/api_unittest";
 
 
     public static class  Mock{

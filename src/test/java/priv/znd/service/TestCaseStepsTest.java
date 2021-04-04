@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class TestCaseStepsTest {
     private BaseApiRun baseApiRun = new BaseApiRun();
     TestCaseSteps testCaseSteps;
-    private String path = "src/main/resources/test_framework_service/testcase_sample/test_sample.yaml";
+    private String path = "src/main/resources/service/testcase_sample/test_sample.yaml";
 
     public static class Mock {
         /**
