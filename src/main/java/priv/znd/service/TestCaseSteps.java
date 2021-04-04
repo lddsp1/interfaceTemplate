@@ -52,7 +52,7 @@ public class TestCaseSteps {
     }
 
 
-   @JsonIgnoreProperties (ignoreUnknown = true)
+    @JsonIgnoreProperties (ignoreUnknown = true)
     public static TestCaseSteps load(String path) throws IOException {
         logger.info("导入测试案例集");
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());

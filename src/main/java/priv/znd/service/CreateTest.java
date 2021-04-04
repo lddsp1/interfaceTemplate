@@ -39,30 +39,27 @@ public class CreateTest {
     }
 
 
-    public List<Arguments> apiTest(){
+    static List<Arguments> apiTest(){
         //保存参数化案例数据
         List<Arguments> testcases = new ArrayList<>();
         //加载所有的接口类
         baseApiRun = new BaseApiRun();
         if(System.getProperty("apiPath")!=null) {
-            baseApiRun.load("src/main/resources/test_framework_service/api");
-        }else
             baseApiRun.load(System.getProperty("apipath").trim());
+        }else
+            baseApiRun.load("src/main/resources/service/api_sample");
         //读取测试用例
-        String testcaseDir = (System.getProperty("testcasePath").trim() != null) ? System.getProperty("testcasePath").trim()
-                :"src/main/resources/test_framework_service/testcase";
-
-
-
+        String testcaseDir = (System.getProperty("testcasePath") != null) ? System.getProperty("testcasePath").trim()
+                :"src/main/resources/service/testcase_sample";
         Arrays.stream(new File(testcaseDir).list()).forEach(name ->{
             String realPath =testcaseDir+"/"+name;
-                    try {
-                        MethodObjectModel testcase = MethodObjectModel.load(realPath);
-                        testcases.add(arguments(testcase,testcase.getName()));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+            try {
+                TestCaseSteps testcase = TestCaseSteps.load(realPath);
+                testcases.add(arguments(testcase,testcase.getName()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         );
         return testcases;
     }

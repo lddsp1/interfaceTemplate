@@ -52,7 +52,7 @@ public class MethodObjectModel {
      * @return
      * @throws IOException
      */
-    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonIgnoreProperties (ignoreUnknown = true)
     public static MethodObjectModel load(String path) throws IOException {
         logger.info("加载apiObject");
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());

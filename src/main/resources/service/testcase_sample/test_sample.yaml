@@ -5,17 +5,17 @@ name: testName
 #执行步骤
 steps:
   #对应的apiObject名称name
-  - apiObject: apiName
+  - apiObject: apiObjecName
    #执行的操作接口
-    action: doAction
+    action: apiName
     #需要参数化输入的值
-    save:
-      xxx: saveparam
+#   save:
+#     xxx: saveparam
     #步骤名称
     stepname: stepName
     #上下文参数化data地址
-    dataPath: dataPath
+#   dataPath: dataPath
      # ddd: cccc
 
-    #断言参数
-    assertjson | assertxml: XXXXXXXXXX
+    #断言参数assertjson(Json格式)  assertxml(Xml格式)
+#   assertjson | assertxml: XXXXXXXXXX
