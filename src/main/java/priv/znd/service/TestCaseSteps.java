@@ -54,16 +54,13 @@ public class TestCaseSteps {
 
     @JsonIgnoreProperties (ignoreUnknown = true)
     public static TestCaseSteps load(String path) throws IOException {
-        logger.info("导入测试案例集");
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return objectMapper.readValue(new File(path), TestCaseSteps.class);
     }
 
     public List<HashMap<String,Object>> run(BaseApiRun baseApiRun){
-
         steps.stream().forEach(step -> {
-           logger.info("执行测试用例:"+step.get("stepname"));
            HashMap<String,Object> result =  baseApiRun.run(step);
            execresult.add(result);
         });

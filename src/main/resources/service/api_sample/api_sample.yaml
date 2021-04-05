@@ -4,9 +4,9 @@ methods:
   #接口名称
   apiName:
     #请求的url地址
-    url: http://xxxx.com/
+    url: http://localhost:5195/docker.json/
     #请求类型post/get/put/del/update
-    protocol: post
+    protocol: get
     #请求报文格式（格式application/json或者application/xml）
     msgRule: application/json
     headMaps:
@@ -22,6 +22,7 @@ methods:
     #发送报文后处理
     postProcessor: XXXX
     #要参数的字段xpath正则匹配
-#   save:
-#     param: xpath
-#     param1: xpath
+    save:
+      param: \"Status\":(.+?),
+      cvv1: \"Volumes\":\s\{\s([\s|\S]+?)\},
+      shuzi: \"IPPrefixLen\":(.+?),

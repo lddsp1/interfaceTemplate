@@ -1,8 +1,5 @@
 package priv.znd.service;
 
-
-
-import com.alibaba.testable.core.annotation.MockWith;
 import io.restassured.response.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -29,7 +26,7 @@ public class MethodModel {
     private HashMap<String, Object> formmsg = new HashMap<>(); //表单数据
     private String preProcessor; //是否进行报文前处理
     private String postProcessor; //是否进行报文后处理
-    private HashMap<String, Object> save = new HashMap<>(); //参数化需要修改请求的值
+    private HashMap<String, Object> save ; //参数化需要保存请求的值
     private HashMap<String, Object>  headMaps = new HashMap<>(); //报文头
     private static final Logger logger = LoggerFactory.getLogger(MethodModel.class);
 
@@ -149,14 +146,16 @@ public class MethodModel {
         Response response ;
         URL url = null;
         if(this.url==null|| StringUtils.isEmpty(this.url)){
-            logger.error("url地址不能为空");
+            if (logger.isDebugEnabled())
+                logger.error("url地址不能为空");
             return null;
         }
         try {
             url = new URL(this.url);
         } catch (MalformedURLException e) {
             e.printStackTrace();
-            logger.error("url地址不能为空");
+            if (logger.isDebugEnabled())
+                logger.error("url地址不能为空");
         }
         response = given().filter((req,res,ctx)->{
             Map<String ,Object> result = new HashMap<>();
@@ -166,11 +165,10 @@ public class MethodModel {
                 if(saveparam != null){
                     for (Map.Entry<String,  Object> entry : saveparam.entrySet()){
                         bodymsg=bodymsg.replace(entry.getKey(), entry.getValue().toString());
-                        logger.info("请求报文:"+bodymsg);
                     }
                     req.body(bodymsg);
                 }
-
+                logger.info("请求报文:{}",bodymsg);
             }
             /*    else if(parammsg != null){
                     result = preHandle("pre", parammsg);
@@ -189,11 +187,11 @@ public class MethodModel {
                     if (value.contains("${") && value.contains("}")
                            && saveparam != null){
                         req.queryParam(entry.getKey(), saveparam.get(value));
-                        logger.info("queryParam的:"+entry.getKey()+"\nvalue:"+ saveparam.get(value));
                     }
                     else
                         req.queryParam(entry.getKey(), value);
                 }
+                logger.info("queryParam内容:{}",querymsg);
             }
             else if(formmsg != null){
                 result = preHandle(formmsg, dataPath);
@@ -202,28 +200,24 @@ public class MethodModel {
                     if (value.contains("${") && value.contains("}")
                              && saveparam.get(value) != null){
                         req.formParam(entry.getKey(), saveparam.get(value));
-                        logger.info("formParam的:"+entry.getKey()+"\nvalue:"+ saveparam.get(value));
                     }
                     else
                         req.formParam(entry.getKey(),entry.getValue());
                 }
+                logger.info("formmsg的内容为:{}",formmsg);
             }
             if(headMaps !=null){
                 headMaps = (HashMap<String,  Object>) result.get("headMaps");
+                logger.info("报文头为:{}", headMaps);
                 for(Map.Entry<String,Object> entry : headMaps.entrySet()){
-                    logger.info("报文头为:"+entry.getKey()+"\nvalue:");
                     req.header(entry.getKey(),entry.getValue());
                 }
             }
-
-            System.out.println(req.getHeaders()+"|"+req.getMethod()+"|"+req.getBody()+"|"+req.getURI());
-
-
+         //   System.out.println(req.getHeaders()+"|"+req.getMethod()+"|"+req.getBody()+"|"+req.getURI());
             Response responseOnly = ctx.next(req,res);
             Response postRes = null;
             if (responseOnly != null) {
                 postRes = afterHandle(responseOnly);
-                logger.info("响应报文为:" + postRes.getBody().asString());
             }
             return postRes;
         }).log().all()
@@ -232,7 +226,6 @@ public class MethodModel {
                 .then()
                 .extract()
                 .response();
-
         return response;
     }
 

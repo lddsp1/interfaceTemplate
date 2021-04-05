@@ -18,7 +18,6 @@ import java.util.HashMap;
 public class MethodObjectModel {
     private String name;
     private HashMap<String, MethodModel> methods =  new HashMap<>();
-    private HashMap<String, String> save = new HashMap<>();
     private static final Logger logger = LoggerFactory.getLogger(MethodObjectModel.class);
 
 
@@ -38,13 +37,8 @@ public class MethodObjectModel {
         this.methods = methods;
     }
 
-    public HashMap<String, String> getSave() {
-        return save;
-    }
 
-    public void setSave(HashMap<String, String> save) {
-        this.save = save;
-    }
+
 
     /**
      * 加载所有apiobject对象
@@ -54,7 +48,7 @@ public class MethodObjectModel {
      */
     @JsonIgnoreProperties (ignoreUnknown = true)
     public static MethodObjectModel load(String path) throws IOException {
-        logger.info("加载apiObject");
+        logger.info("加载apiObject对象:{}", path);
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
             return objectMapper.readValue(new File(path), MethodObjectModel.class);
     }

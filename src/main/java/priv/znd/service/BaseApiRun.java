@@ -18,13 +18,11 @@ import priv.znd.util.xmlutil.CunstomXmlDvaluator;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.xmlunit.diff.ComparisonResult.DIFFERENT;
 
 /**
  * @author lddsp
@@ -34,7 +32,7 @@ public class BaseApiRun {
 
     private List<MethodObjectModel> apis = new ArrayList<MethodObjectModel>(); //保存所有的接口信息
     //private HashMap<String,Response> result;
-    private HashMap<String,String> save; //参数化需要从报文提取的保存
+    private HashMap<String, Object> save; //参数化需要从报文提取的保存
     private HashMap<String,Object> saveparam = new HashMap<>(); //参数化数据保存
     private HashMap<String,String> respondbody = new HashMap<>();//保存响应体
     private static final Logger logger = LoggerFactory.getLogger(BaseApiRun.class);
@@ -51,38 +49,35 @@ public class BaseApiRun {
         this.apis = apis;
     }
 
-    public HashMap<String, String> getSave() {
+    public HashMap<String,  Object> getSave() {
         return save;
     }
 
-    public void setSave(HashMap<String, String> save) {
+    public void setSave(HashMap<String, Object> save) {
         this.save = save;
     }
 
 
-    public void setSaveparam(HashMap<String, Object> saveparam) {
-        this.saveparam = saveparam;
-    }
 
     /**
      *上下文案例依赖参数保存
      * @param response
      */
-    private void setSaveparam(Response response) {
-
-        if(this.save != null){
+    private void setSaveparam(Response response, HashMap<String, Object> save) {
+        if(save != null){
+            logger.info("需要保存的上下文依赖:{}",save);
             String resStr = response.getBody().asString();
-            for (Map.Entry<String, String> entry : save.entrySet()){
-                String token = entry.getValue();
+            for (Map.Entry<String, Object> entry : save.entrySet()){
+                String token = entry.getValue().toString();
                 Pattern r = Pattern.compile(token);
                 Matcher m = r.matcher(resStr);
                 int i = 1;
                 while(m.find()){
                     saveparam.put("${"+entry.getKey()+i+"}",m.group(1).trim());
-                    logger.info("保存上下文依赖:{"+entry.getKey()+i+"}"+m.group(1).trim());
                     i++;
                 }
             }
+            logger.info("案例间的依赖保存有{}",saveparam);
         }
     }
 
@@ -92,14 +87,14 @@ public class BaseApiRun {
      * @param dir //到文件夹路径
      */
     public void load(String dir){
-        logger.info("加载接口内容");
+        logger.info("加载接口对象的路径:{}",dir);
         Arrays.stream(new File(dir).list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
                 //todo: 筛选文件，
                 return true;
             }
-        })).forEach(path-> {
+        })).forEach(path -> {
             try {
                 apis.add(MethodObjectModel.load(dir+"/"+path));//导入当前路径的所有接口
             } catch (IOException e) {
@@ -148,8 +143,7 @@ public class BaseApiRun {
      * @param caseName 案例名称
      * @return 比较结果
      */
-    private HashMap<String, Object> compareXml
-            (String expected, String actual,String caseName){
+    private HashMap<String, Object> compareXml (String expected, String actual,String caseName){
         HashMap<String, Object> xmlResult = new HashMap<>();
         Diff xmlDiff = DiffBuilder.compare(expected).withTest(actual)
                 .checkForSimilar()
@@ -241,13 +235,13 @@ public class BaseApiRun {
             String asserresp = null;
             if(onlyRespone != null) {
                 asserresp = onlyRespone.getBody().asString();
+            }else {
+                if(logger.isDebugEnabled())
+                    logger.error("{}响应结果为空",step.get("stepname").toString());
             }
-                // System.out.println(asserresp);
                 if (asserresp != null || StringUtils.isNotEmpty(asserresp)) {
-                save = api.getSave();
-                setSaveparam(onlyRespone);
-//                respondbody.put(step.get("stepname").toString(),onlyRespone.getBody().asString());
-                logger.info(step.get("stepname").toString() + "执行结果的响应报文:" + asserresp);
+                    logger.info("{}执行结果的响应报文:{}", step.get("stepname").toString(), asserresp);
+                    setSaveparam(onlyRespone, api.getMethods().get(step.get("action")).getSave());
                 if (step.get("assertjson") != null) {
                     try {
                         comResult = compareJson(step.get("assertjson").toString(), asserresp, step.get("stepname").toString());
@@ -270,11 +264,10 @@ public class BaseApiRun {
                     comResult.put("resultflag", false);
                     comResult.put("stepname", step.get("stepname"));
             }
+                logger.info("{}步骤执行信息:{}",step.get("stepname"),comResult.get("resultmsg"));
                 metherResult.set(comResult);
             }
         });
         return metherResult.get();
     }
-
-
 }

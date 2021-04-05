@@ -7,8 +7,6 @@ import com.alibaba.testable.core.model.MockScope;
 import com.alibaba.testable.processor.annotation.EnablePrivateAccess;
 import io.restassured.builder.ResponseBuilder;
 import io.restassured.response.Response;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -73,14 +71,14 @@ class BaseApiRunTest {
     void setSaveparamxml() {
         String resxml = "<class><student><name>cccc</name><age>21</age></student><student><name>bbbbbb</name><age>22</age></student></class>";
         String pat = "<name>(.+?)</name>";
-        HashMap<String, String> localSave = new HashMap<>();
+        HashMap<String, Object> localSave = new HashMap<>();
         Response localRes = new ResponseBuilder()
                 .setBody(resxml)
                 .setStatusCode(200)
                 .build();
         localSave.put("save",pat);
         baseApiRun.setSave(localSave);
-        baseApiRun.setSaveparam(localRes);
+        baseApiRun.setSaveparam(localRes, localSave);
         assertAll("多行匹配",
                 ()->assertEquals("cccc",baseApiRun.getSaveparam().get("${save1}").toString()),
                 ()->assertEquals("bbbbbb", baseApiRun.getSaveparam().get("${save2}").toString())
@@ -97,7 +95,7 @@ class BaseApiRunTest {
         String res = "{\"eeee\":{\"aaaa\":\"ggggg\", \"vvvvv\":\"llll\", \"cccc\":{\"uuuu\":111, \"iii\":\"ppp\"},\"rrrr\":\"dddd\",\"tttt\":\"ffff\"}";
         String res1 = "{\"eeee\":{\"aaaa\":\"ggggg2\", \"vvvvv\":\"llll\", \"cccc\":{\"uuuu\":111, \"iii\":\"ppp\"}, \"eeee2\":{\"aaaa\":\"ggggg3\", \"vvvvv\":\"llll1\", \"cccc\":{\"uuuu\":1111, \"iii\":\"ppp1\"}, \"rrrr\":\"dddd\",\"tttt\":\"ffff\"}";
         String pat = "\"aaaa\":(.+?),";
-        HashMap<String, String> localSave = new HashMap<>();
+        HashMap<String, Object> localSave = new HashMap<>();
         Response localRes = new ResponseBuilder()
                 .setBody(res)
                 .setStatusCode(200)
@@ -107,10 +105,9 @@ class BaseApiRunTest {
                 .setStatusCode(200)
                 .build();
         localSave.put("save",pat);
-        baseApiRun.setSave(localSave);
-        baseApiRun.setSaveparam(localRes);
+        baseApiRun.setSaveparam(localRes,localSave);
         assertEquals("ggggg",baseApiRun.getSaveparam().get("${save1}"));
-        baseApiRun.setSaveparam(localRes1);
+        baseApiRun.setSaveparam(localRes1,localSave);
        assertAll("多行匹配",
                 ()->assertEquals("ggggg2",baseApiRun.getSaveparam().get("${save1}").toString()),
                 ()->assertEquals("ggggg3", baseApiRun.getSaveparam().get("${save2}").toString())

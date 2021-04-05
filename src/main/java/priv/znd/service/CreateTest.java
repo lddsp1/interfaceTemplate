@@ -5,6 +5,8 @@ import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +22,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
  */
 public class CreateTest {
     private static BaseApiRun baseApiRun;
+    private static Logger logger = LoggerFactory.getLogger(CreateTest.class);
 
 
     @ParameterizedTest(name = "{index} {1}")
@@ -27,6 +30,7 @@ public class CreateTest {
     @Description()
     @Step("Type {testCaseSteps.name}")
     void apiTest(TestCaseSteps testCaseSteps ,String name){
+        logger.info("{}---案例执行开始",name);
         Allure.description(testCaseSteps.getDescription());
         List<HashMap<String,Object>> results = testCaseSteps.run(baseApiRun);
         SoftAssertions softAssert = new SoftAssertions();
@@ -36,6 +40,7 @@ public class CreateTest {
                         .isEqualTo(true)
         );
         softAssert.assertAll();
+        logger.info("{}---案例执行结束",name);
     }
 
 
@@ -51,6 +56,7 @@ public class CreateTest {
         //读取测试用例
         String testcaseDir = (System.getProperty("testcasePath") != null) ? System.getProperty("testcasePath").trim()
                 :"src/main/resources/service/testcase_sample";
+        logger.info("导入测试案例的路径:{}",testcaseDir);
         Arrays.stream(new File(testcaseDir).list()).forEach(name ->{
             String realPath =testcaseDir+"/"+name;
             try {

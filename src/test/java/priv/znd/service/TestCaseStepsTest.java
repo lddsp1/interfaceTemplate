@@ -2,7 +2,6 @@ package priv.znd.service;
 
 import com.alibaba.testable.core.annotation.MockMethod;
 import com.alibaba.testable.core.model.MockScope;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

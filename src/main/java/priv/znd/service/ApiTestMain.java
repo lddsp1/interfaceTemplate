@@ -14,13 +14,13 @@ import static org.junit.platform.engine.discovery.ClassNameFilter.includeClassNa
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
 /**
- * @author lddsp
+ * @author lddsp案例执行开始
  * @date 2021/3/23 5:52
  */
 public class ApiTestMain {
     private static final Logger logger = LoggerFactory.getLogger(ApiTestMain.class);
     public static void main(String[] args) {
-        logger.info("开始执行测试案例...................");
+        logger.info("测试案例集执行开始...................");
         LauncherDiscoveryRequest launcherReques = LauncherDiscoveryRequestBuilder
                 .request()
                 .selectors(
@@ -36,10 +36,10 @@ public class ApiTestMain {
         launcher.registerTestExecutionListeners(listener);
         launcher.execute(launcherReques);
         TestExecutionSummary summary = listener.getSummary();
-        logger.info("案例总数:"+summary.getTestsFoundCount());
-        logger.info("案例执行失败数有:"+summary.getTestsFailedCount());
-        logger.info("案例执行成功数有:"+summary.getTestsSucceededCount());
-        logger.info("案例执行结束.......................");
+        logger.info("案例总数:{}",summary.getTestsFoundCount());
+        logger.info("案例执行失败数有:{}",summary.getTestsFailedCount());
+        logger.info("案例执行成功数有:{}",summary.getTestsSucceededCount());
+        logger.info("案例集执行结束.......................\n\n");
 
     }
 }
